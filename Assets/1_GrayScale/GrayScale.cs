@@ -16,14 +16,9 @@ public class GrayScale : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        RenderTexture rt = new RenderTexture(inputTexture.width, inputTexture.height, 24);
-        rt.enableRandomWrite = true;
-        rt.Create();
-
         outputRT = new RenderTexture(inputTexture.width, inputTexture.height, 24);
         outputRT.enableRandomWrite = true;
         outputRT.Create();
-
 
         int kernel = shader.FindKernel("CSMain");
         shader.SetTexture(kernel, "inputTexture", inputTexture);

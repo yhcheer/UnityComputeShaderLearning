@@ -14,9 +14,13 @@ public class GPU_Texture2D : MonoBehaviour
     public RenderTexture rt;
 
     public ComputeShader shader;
+    public ComputeShader getPixelsShader;
+    //public ComputeShader SetPixelsShader;
 
+    // GetPixels获取的数据
     Color[] colors;
 
+    // Apply输入的数据
     struct data
     {
         public Vector4 color;
@@ -31,14 +35,20 @@ public class GPU_Texture2D : MonoBehaviour
 
         inputDatas = new data[width * height];
 
-        colors = tex.GetPixels();
+        // cpu version
+        //colors = tex.GetPixels();
+        // gpu version
+        colors = GetPixels(tex);
 
         Debug.Log("Get Pixels done");
 
+        // cpu version
         SetPixels(colors);
+        // TODO:gpu version
 
         Debug.Log("Set Pixels done");
 
+        Apply();
     }
 
 
@@ -58,11 +68,32 @@ public class GPU_Texture2D : MonoBehaviour
                 SetPixel(x, y, colors[x + y * width]);
             }
         }
-        //for(int i = 0; i < colors.Length; i++)
-        //{
-        //    inputDatas[i].color = colors[i];
-        //}
-        Apply();
+    }
+
+    Color[] GetPixels(Texture2D tex)
+    {
+        int width = tex.width;
+        int height = tex.height;
+        colors = new Color[width * height];
+
+        // 申请一个outputBuffer来接取
+        ComputeBuffer outputBuffer = new ComputeBuffer(colors.Length, 16);
+
+        int kernel = getPixelsShader.FindKernel("CSMain");
+        // cpu => gpu
+        getPixelsShader.SetTexture(kernel, "inputTexture", tex);
+        getPixelsShader.SetInt("width", width);
+        // gpu => cpu 
+        getPixelsShader.SetBuffer(kernel, "outputDatas", outputBuffer);
+
+        // Dispatch
+        getPixelsShader.Dispatch(kernel, width/8, height/8, 1);
+
+        // 转换成Color[]
+        outputBuffer.GetData(colors);
+        // release buffer
+        outputBuffer.Release();
+        return colors;
     }
 
     public void Apply()
@@ -86,5 +117,4 @@ public class GPU_Texture2D : MonoBehaviour
 
         inputBuffer.Release();
     }
-
 }

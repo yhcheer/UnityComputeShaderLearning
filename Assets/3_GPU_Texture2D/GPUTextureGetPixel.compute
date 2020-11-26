@@ -1,0 +1,23 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// 输出的结构是color RGBA 4个浮点数
+struct data
+{
+    float4 color;
+};
+
+// ( CPU -> GPU )
+Texture2D inputTexture;
+int width;
+
+// ( GPU -> CPU )
+RWStructuredBuffer<data> outputDatas;
+
+[numthreads(8, 8, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x + width * id.y;
+    // gamma
+    outputDatas[i].color = pow(abs(inputTexture[id.xy]),1/2.2);
+}
